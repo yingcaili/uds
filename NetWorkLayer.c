@@ -1,5 +1,5 @@
-#include "NetWorkLayer-h"
-
+#include "CommonTypes.h"
+#include "NetWorkLayer.h"
 typedef enum 
 {
     eNetWorkIdle,
@@ -38,12 +38,15 @@ static void NetWorkMsgBuf(const u8 u8FrameType,const u8 realdata[],const u16 rea
 static tNetWorkRecvSt eRecvState=eNetWorkIdle;
 static u8 u8UdsNetworkMsg[mMsgRecvMax];
 /*Index for testing CAN msg */
+#if (mNetWorkAsync)
 static u16 u16NetWorkMsgIndexIn=0;
 static u16 u16NetWorkMsgIndexOut=0;
+#endif
 static u8 u8FrameBlockSizeCounter=0;/*less than block size*/
 static u8 u8FrameConsecutiveSn=0; /*0~0xf*/
 static u16 u16FrameConsecutiveLength=0;
 static u16 u16FrameConsecutiveLengthCounter=0;
+tUdsReqType eDiagIdReqType=ePhyFunc;
 typedef enum
 {
     ePciTypeSingle,
@@ -61,20 +64,26 @@ typedef struct
 tNetWorkMsg stNetWorkMsgList={0,&u8UdsNetworkMsg[0],ePciTypeError};
 extern void NetWorkInit(void)
 {
+    #if (mNetWorkAsync)
     u16NetWorkMsgIndexIn=0;
     u16NetWorkMsgIndexOut=0;
+    #endif
     eRecvState=eNetWorkIdle;
 }
 extern void NetWorkDeInit(void)
 {
+    #if (mNetWorkAsync)
     u16NetWorkMsgIndexIn=0;
     u16NetWorkMsgIndexOut=0;
+    #endif
     eRecvState=eNetWorkIdle;
 }
 static void NetWorkReset(void)
 {
+    #if (mNetWorkAsync)
     u16NetWorkMsgIndexIn=0;
     u16NetWorkMsgIndexOut=0;
+    #endif
     eRecvState=eNetWorkIdle;
 
 }
@@ -86,11 +95,13 @@ static void NetWorkMsgBuf(const u8 u8FrameType,const u8 realdata[],const u16 rea
     stNetWorkMsgList.data[i]=realdata[i];
     }
     stNetWorkMsgList.length=reallength;
+    #if (mNetWorkAsync)
     u16NetWorkMsgIndexIn++;
     if(u16NetWorkMsgIndexIn>=mMsgRecvMax)
     {
         u16NetWorkMsgIndexIn=0;
     }
+    #endif
 }
 extern void NetWorkMsgRecv(const u8 data[],const u8 length)
 {
@@ -123,7 +134,6 @@ extern void NetWorkMsgRecv(const u8 data[],const u8 length)
                 NetWorkReset();
                 eRecvState=eNetWorkIdle;
             }
-
         }
         else 
         {
@@ -219,8 +229,9 @@ static tNetWorkStCode NetWorkMsgSingleFrame(const u8 data[],const u8 length)
     else 
     {
         NetWorkMsgBuf(mPciFirstFrame,&data[1],u8DataLen);
+        ret=eSuccess;
     }
-
+    return ret;
     
 
 }
@@ -268,27 +279,9 @@ static tNetWorkStCode NetWorkMsgConsecutiveFrame(const u8 data[],const u8 length
 }
 
 
-typedef struct FlashDataInfo
-{
-    u32 u32DataLen;
-    u32 u32StartAddress;
-}tFlashDataInfo;
-tFlashDataInfo gstFlashDataInfo;
-u32 DataTransformBit32(const u8 data[])
-{
-    u32 ret=0;
-    ret+=(data[0]<<24);
-    ret+=(data[1]<<16);
-    ret+=(data[2]<<8);
-    ret+=(data[3]<<0);
-    return ret;
-}
-static void FlashSaveData(const u32 u32StartAddress,const u32 u32DataLen)
-{
-    gstFlashDataInfo.u32StartAddress=u32StartAddress;
-    gstFlashDataInfo.u32DataLen=u32DataLen;
-   
-}
+
+
+
 static void NetWorkMsgRecvInfo(const u8 data[],const u8 length)
 {
     FlashSaveData(DataTransformBit32(&data[0]),DataTransformBit32(&data[4]));
@@ -323,5 +316,28 @@ static void NetWorkMsgTransfer(const u8 data[],const u8 length)
 
 static tNetWorkStCode NetWorkMsgSend(const u8 data[],const u8 length)
 {
+    mNetWorkMsgSend(data,length)
+}
 
+
+static void NetWorkDiagType(const u32 Identifier)
+{
+
+    if(Identifier==mCanFunctionalReqId)
+    {
+        eDiagIdReqType=eFunc;
+    }
+    else if(Identifier==mCanPhysicalRequestId)
+    {
+        eDiagIdReqType=ePhy;
+    }
+    else
+    {
+        /*nothing*/
+    }
+}
+void NetWorkCanMsgRecv(const u32 Identifier,const u8 data[],const u32 Length)
+{
+    NetWorkDiagType(Identifier);
+    NetWorkMsgRecv(data,Length);
 }

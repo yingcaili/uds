@@ -6,4 +6,5 @@ typedef unsigned long u32;
 
 
 extern void LibDebugPrintf(const char *Msg);
+extern u32 DataTransformBit32(const u8 data[]);
 #endif

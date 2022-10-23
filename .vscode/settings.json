@@ -2,6 +2,7 @@
     "files.associations": {
         "services-h": "c",
         "networklayer-c": "c",
-        "networklayer-h": "c"
+        "networklayer-h": "c",
+        "networklayer.h": "c"
     }
 }

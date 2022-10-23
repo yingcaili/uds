@@ -1,20 +1,28 @@
 #include "CommonTypes.h"
 #include "services.h"
 
-typedef void (*pServiceCallBack)(u8 PureData[],u32 DataLen);
+typedef void (*pServiceCallBack)(const u8 PureData[],const u32 DataLen);
 typedef enum 
 {
     eNotSupported,
     eSupported,
-}eServiceSup;
+}tServiceSup;
 typedef struct 
 {
-    u8 DefaultSessionSupport;
-    u8 ProgramSessionSupport;
-    u8 ExtendSessionSupport;
-    u8 EcuSessionSupport;
-    u8 ReserverSessionSupport;
+    tServiceSup DefaultSessionSupport;
+    tServiceSup ProgramSessionSupport;
+    tServiceSup ExtendSessionSupport;
+    tServiceSup EcuSessionSupport;
+    tServiceSup ReserverSessionSupport;
 }tSessionSupport;
+typedef enum 
+{
+    eDefaultSession=0x01,
+    eProgramSession=0x02,
+    eExtendSession=0x03,
+    eEcuSession=0x04,
+    eInvalidSession=0xff,
+}tSession;
 typedef enum 
 {
     eIDSessionControl=0x10,
@@ -32,35 +40,30 @@ typedef enum
     eIDTesterPresent=0x3E, 
     eIDInvalid=0xff,   
 }tServiceId;
-typedef enum 
-{
-    ePhy=0x01,
-    eFunc=0x02,
-    ePhyFunc=0x03,
-}eMaskReqType;
+
 typedef struct 
 {
     tServiceId Id;
     pServiceCallBack ServiceCallBack;
-    eMaskReqType RequestType;//functional,physical
+    tUdsReqType RequestType;//functional,physical
     tSessionSupport AppModeSession;
 }tService;
 
-static void UdsServiceSessionControl(u8 PureData[],u32 DataLen);
-static void UdsServiceEcuReset(u8 PureData[],u32 DataLen);
-static void UdsServiceClearDtcInfo(u8 PureData[],u32 DataLen);
-static void UdsServiceReadDtcinfo(u8 PureData[],u32 DataLen);
-static void UdsServiceReadDataByIdentifier(u8 PureData[],u32 DataLen);
-static void UdsServiceSecurityAccess(u8 PureData[],u32 DataLen);
-static void UdsServiceWriteDataByIdentifier(u8 PureData[],u32 DataLen);
-static void UdsServiceIoControl(u8 PureData[],u32 DataLen);
-static void UdsServiceRoutineControl(u8 PureData[],u32 DataLen);
-static void UdsServiceRequestTransferDownload(u8 PureData[],u32 DataLen);
-static void UdsServiceTransferData(u8 PureData[],u32 DataLen);
-static void UdsServiceTransferDataExit(u8 PureData[],u32 DataLen);
-static void UdsServiceTesterPresent(u8 PureData[],u32 DataLen);
+static void UdsServiceSessionControl(const u8 PureData[],const u32 DataLen);
+static void UdsServiceEcuReset(const u8 PureData[],const u32 DataLen);
+static void UdsServiceClearDtcInfo(const u8 PureData[],const u32 DataLen);
+static void UdsServiceReadDtcinfo(const u8 PureData[],const u32 DataLen);
+static void UdsServiceReadDataByIdentifier(const u8 PureData[],const u32 DataLen);
+static void UdsServiceSecurityAccess(const u8 PureData[],const u32 DataLen);
+static void UdsServiceWriteDataByIdentifier(const u8 PureData[],const u32 DataLen);
+static void UdsServiceIoControl(const u8 PureData[],const u32 DataLen);
+static void UdsServiceRoutineControl(const u8 PureData[],const u32 DataLen);
+static void UdsServiceRequestTransferDownload(const u8 PureData[],const u32 DataLen);
+static void UdsServiceTransferData(const u8 PureData[],const u32 DataLen);
+static void UdsServiceTransferDataExit(const u8 PureData[],const u32 DataLen);
+static void UdsServiceTesterPresent(const u8 PureData[],const u32 DataLen);
 
-
+static u8 u8UdsCurrSession;
 
 static tService stServiceList[]={
     {
@@ -142,61 +145,193 @@ static tService stServiceList[]={
 
 };
 
-static void UdsServiceSessionControl(u8 PureData[],u32 DataLen)
+static void UdsServiceSessionControl(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceEcuReset(u8 PureData[],u32 DataLen)
+static void UdsServiceEcuReset(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceClearDtcInfo(u8 PureData[],u32 DataLen)
+static void UdsServiceClearDtcInfo(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceReadDtcinfo(u8 PureData[],u32 DataLen)
+static void UdsServiceReadDtcinfo(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceReadDataByIdentifier(u8 PureData[],u32 DataLen)
+static void UdsServiceReadDataByIdentifier(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceSecurityAccess(u8 PureData[],u32 DataLen)
+static void UdsServiceSecurityAccess(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceWriteDataByIdentifier(u8 PureData[],u32 DataLen)
+static void UdsServiceWriteDataByIdentifier(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceIoControl(u8 PureData[],u32 DataLen)
+static void UdsServiceIoControl(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceRoutineControl(u8 PureData[],u32 DataLen)
+static void UdsServiceRoutineControl(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceRequestTransferDownload(u8 PureData[],u32 DataLen)
+static void UdsServiceRequestTransferDownload(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceTransferData(u8 PureData[],u32 DataLen)
+static void UdsServiceTransferData(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceTransferDataExit(u8 PureData[],u32 DataLen)
+static void UdsServiceTransferDataExit(const u8 PureData[],const u32 DataLen)
 {
 }
-static void UdsServiceTesterPresent(u8 PureData[],u32 DataLen)
+static void UdsServiceTesterPresent(const u8 PureData[],const u32 DataLen)
 {
 }
-void UdsMsgRecv(const u8 data[],const u8 length)
+static u8 UdsLocateServiceIndex(tServiceId Id)
+{
+    u8 u8NotFound=1;
+    u8 index=0xff;
+    for(u8 i=0;(i<sizeof(stServiceList)/sizeof(stServiceList[0]))&&(u8NotFound);i++)
+    {
+        if(stServiceList[i].Id==Id)
+        {
+            u8NotFound=0;
+            index=i;
+        }
+    }
+    return index;
+}
+static tServiceSup UdsIsSessionSupport(u8 ServiceListIndex)
+{
+    tServiceSup ret=eNotSupported;
+    switch(u8UdsCurrSession)
+    {
+        case eDefaultSession:ret=stServiceList[ServiceListIndex].AppModeSession.DefaultSessionSupport;break;
+        case eProgramSession:ret=stServiceList[ServiceListIndex].AppModeSession.ProgramSessionSupport;break;
+        case eExtendSession:ret=stServiceList[ServiceListIndex].AppModeSession.ExtendSessionSupport;break;
+        case eEcuSession:ret=stServiceList[ServiceListIndex].AppModeSession.EcuSessionSupport;break;
+        default:break;
+    }
+    return ret;
+}
+static u8 UdsIsSubFunctionSupport(u8 ServiceListIndex)
 {
 
 }
+typedef struct 
+{
+    tServiceId Id;
+    u32 MinLen;
+    u32 MaxLen;
+}tServiceLen;
+static tServiceLen stServiceListLen[]=
+{
+    {eIDSessionControl,2 ,2},
+    {eIDEcuReset, 2,2},
+    {eIDClearDtcInfo, 2,2},
+    {eIDReadDtcinfo, 2,2},
+    {eIDReadDataByIdentifier, 2,2},
+    {eIDSecurityAccess, 2,2},
+    {eIDWriteDataByIdentifier, 2,2},
+    {eIDIoControl, 2,2},
+    {eIDRoutineControl, 2,2},
+    {eIDRequestTransferDownload, 2,2},
+    {eIDTransferData, 2,2},
+    {eIDTransferDataExit, 2,2},
+    {eIDTesterPresent, 2,2}, 
+};
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
+static u8 UdsIsInvalidLengthOrFormat(u8 ServiceListIndex,const u32 length)
+{
+    u8 u8NotFound=1;
+    u8 u8IsValid=0;
+    for(u8 i=0;(i<sizeof(stServiceListLen)/sizeof(stServiceListLen[0]))&&(u8NotFound);i++)
+    {
+        if(stServiceList[ServiceListIndex].Id==stServiceListLen[i].Id)
+        {
+            u8NotFound=0;
+            if(stServiceListLen[i].MinLen<=length 
+            && stServiceListLen[i].MaxLen>=length )
+            {
+                u8IsValid=1;
+            }
+        }
+    }
+    return u8IsValid;
+}
+
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
+void UdsMsgRecv(const u8 data[],const u32 length)
+{
+
+}
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
 void UdsMain(void)
 {
 
 }
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
 void UdsInit(void)
 {
 
 }
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
 void UdsDeInit(void)
 {
 
 }
+//=====================================
+//FunctionName:
+//Input:
+//
+//Output:
+//
+//Description:
+//
+//Author:
+//=====================================
 void UdsTimer(void)//1ms task
 {
 
